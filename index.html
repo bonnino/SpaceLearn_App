@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous">
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flashcards</title>
+  <style>
+    body {
+      padding: 1rem;
+      font-size: 1.2rem;
+      background-color: #f0f4c3;
+      /* Vert pastel */
+    }
+
+    .study-section {
+      margin-top: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .flashcard-container {
+      border: 1px solid #ccc;
+      padding: 3rem;
+      //margin-bottom: 3rem;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+    }
+
+    .flashcard-content {
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      //margin-bottom: 3rem;
+    }
+
+    .flashcard-controls {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    #prev-card-btn,
+    #next-card-btn {
+      padding: 0.75rem 1rem;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    #prev-card-btn:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    #category-selection {
+      margin-bottom: 3rem;
+    }
+
+    .show-answer-btn {
+      margin-top: 2rem;
+      padding: 0.75rem 1rem;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .show-answer-btn:hover {
+      background-color: #367c39;
+    }
+
+    .flashcard {
+      position: relative;
+      perspective: 1000px;
+      width: 100%;
+      /* height: auto;  Enlever la hauteur auto pour pouvoir la fixer */
+      height: 200px;
+      /* Ajout d'une hauteur fixe */
+      min-height: 200px;
+      /* Garder min-height pour assurer une hauteur minimale */
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard .front,
+    .flashcard .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: top;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .flashcard .front {
+      background-color: #f9f9f9;
+      color: #2c3e50;
+    }
+
+    .flashcard .back {
+      background-color: #82e0aa;
+      color: #1a5235;
+    }
+
+    .flashcard .front.fade-out {
+      opacity: 0;
+    }
+
+    .flashcard .back.fade-in {
+      opacity: 1;
+    }
+
+    .btn-lg {
+      font-size: 1.2rem;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .form-select {
+      font-size: 1.2rem;
+      padding: 0.75rem;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        font-size: 1rem;
+      }
+
+      .flashcard-content {
+        font-size: 1.3rem;
+      }
+
+      #prev-card-btn,
+      #next-card-btn,
+      .show-answer-btn,
+      .btn-lg,
+      .form-select {
+        font-size: 1rem;
+      }
+
+      .flashcard .front,
+      .flashcard .back {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!--
+     --- PARTIE FIXE ---
+  -->
+  <div class="container">
+    <h1 class="mt-4">Quiz Flashcards</h1>
+    <div id="category-selection">
+      <h2>Choisir une catégorie :</h2>
+      <select id="category-list" class="form-select form-select-lg">
+              <option value="-1">Sélectionner une catégorie</option>
+          </select>
+    </div>
+    <div id="study-section" class="study-section"></div>
+    <div id="study-card-number" class="text-center mb-3 h4">Carte : / </div>
+    <div id="flashcard-container" class="flashcard-container">
+      <div id="sens-controls" class="mb-3">
+        <label class="me-2 h4">
+                <input type="radio" name="sens" value="QtoR" checked> Question -> Réponse
+            </label>
+        <label class="h4">
+                <input type="radio" name="sens" value="RtoQ"> Réponse -> Question
+            </label>
+      </div>
+      <div id="flashcard-content" class="flashcard-content">
+      </div>
+    </div>
+    <div id="flashcard-controls" class="flashcard-controls">
+      <button id="prev-card-btn" class="btn btn-secondary btn-lg" onclick="prevFlashcard()" disabled>
+    <i class="fas fa-chevron-left"></i> <span class="visually-hidden">Carte précédente</span>
+  </button>
+      <button id="next-card-btn" class="btn btn-primary btn-lg" onclick="nextFlashcard()">
+    <span class="visually-hidden">Carte suivante</span> <i class="fas fa-chevron-right"></i>
+  </button>
+    </div>
+  </div>
+  <!-- 
+   --- PARTIE DYNAMIQUE ---
+  -->
+  <script>
+    let flashcardsData;
+        let currentCardIndex = 0;
+        let currentCategoryId = -1;
+
+        // Déclaration des éléments DOM pour les : catégories, boites, flashcards
+        const categorySelection = document.getElementById('category-selection'); // Récupère l'élément ici
+        const categoryList = document.getElementById('category-list');
+        const studySection = document.getElementById('study-section'); // Assure-toi d'avoir un élément avec cet ID
+        const cardNumberDisplay = document.getElementById('study-card-number'); // Récupère l'élément pour afficher le nombre
+
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const sensControls = document.getElementById('sens-controls'); // Récupère le conteneur des radios
+        const flashcardContent = document.getElementById('flashcard-content');
+
+        const prevCardBtn = document.getElementById('prev-card-btn');
+        const nextCardBtn = document.getElementById('next-card-btn');  
+
+        // Fonction appelée au chargement de la page
+        function onLoad() {
+            google.script.run.withSuccessHandler(handleCategories).getCategories();
+            google.script.run.withSuccessHandler(handleBoites).getBoites();
+            const sensControls = document.getElementById('sens-controls');
+            if (sensControls) {
+                sensControls.addEventListener('change', () => {
+                    showFlashcard(currentCardIndex);
+                });
+            }
+        }
+
+        // Fonction pour afficher les flashcards
+        function displayFlashcards(data) {
+            console.log("displayFlashcards appelée avec les données :", data);
+            flashcardsData = data;
+            showFlashcard(currentCardIndex);
+            // nombre total de cartes de la boite
+             cardNumberDisplay.textContent = `Carte : ${currentCardIndex + 1}/${flashcardsData.length}`;
+ // gestion des boutons
+            if (currentCardIndex > 0 ) {
+              prevCardBtn.disabled = false ;
+            } else {
+              prevCardBtn.disabled =true ;
+            }
+            if (currentCardIndex < flashcardsData.length - 1) {
+              nextCardBtn.disabled = false ;
+            } else {
+              nextCardBtn.disabled = true ;
+            }
+            
+            flashcardContainer.style.display = 'block';
+        }
+
+        function handleCategories(categories) {
+            if (categoryList) {
+                categories.forEach(categorie => {
+                    const option = document.createElement('option');
+                    option.value = categorie.Id;
+                    option.textContent = categorie.Nom.trim();
+                    categoryList.appendChild(option);
+                });
+
+                categoryList.addEventListener('change', () => {
+                    const selectedCategoryId = categoryList.value;
+                    if (selectedCategoryId !== "-1") {
+                        console.log(`Catégorie sélectionnée (ID: ${selectedCategoryId}) !`);
+                        //currentCategoryId = selectedCategoryId;
+                        currentCategoryId = parseInt(selectedCategoryId);
+                        studySection.style.display = 'block'; // Affiche la section des boîtes
+                    } else {
+                        studySection.style.display = 'none'; // Cache la section des boîtes si aucune catégorie n'est sélectionnée
+                        flashcardContainer.style.display = 'none'; // Cache le conteneur des flashcards
+                    }
+                });
+            } else {
+                console.error("L'élément category-list n'a pas été trouvé dans le HTML.");
+            }
+
+            // Cache initialement la section des flashcards
+            //studySection.style.display = 'none';
+            flashcardContainer.style.display = 'none';
+        }
+
+        function handleBoites(boites) {
+  if (studySection) {
+    boites.forEach(boite => {
+      const nomBoite = boite.Nom;
+      const idBoite = boite.Id;
+
+      const button = document.createElement('button');
+      button.className = 'btn btn-primary btn-lg';
+      button.textContent = nomBoite.trim();
+      button.style.marginBottom = '10px';
+      button.style.marginRight = '10px';
+      button.dataset.boiteId = idBoite;
+
+      button.addEventListener('click', () => {
+        console.log(`Bouton ${nomBoite.trim()} (ID: ${idBoite}) cliqué !`);
+        console.log("currentCategoryId au moment du clic :", currentCategoryId);
+        currentCardIndex = 0;
+        google.script.run
+  .withSuccessHandler(function(flashcards) {
+    console.log("Données reçues de getFlashcardsForBoiteAndCategory :", flashcards);
+    displayFlashcards(flashcards);
+  })
+  .getFlashcardsForBoiteAndCategory(idBoite, currentCategoryId);
+  /*
+        google.script.run
+  .withSuccessHandler(displayFlashcards)
+  .getFlashcardsForBoiteAndCategory(idBoite, currentCategoryId);*/
+        console.log("Appel à google.script.run effectué.");
+      });
+      studySection.appendChild(button);
+    });
+  }
+}
+
+
+        // Fonction pour afficher une flashcard spécifique
+        function showFlashcard(index) {
+            console.log(`showFlashcard : index=${index}`)
+            
+            console.log("Contenu de flashcardsData dans showFlashcard :", flashcardsData);
+            flashcardContent.innerHTML = '';
+
+            if (index < flashcardsData.length) {
+                const cardData = flashcardsData[index];
+                console.log(`rowNumber=${cardData.rowNumber}`); // affichage du vrai numéro de ligne
+
+                // Incrémente le compteur d'affichages en utilisant le numéro de ligne
+                if (cardData.rowNumber) {
+                  google.script.run.updateCardStats(cardData.rowNumber);
+                }
+                
+                const selectedSens = sensControls.querySelector('input[name="sens"]:checked').value;
+                const afficheQuestionEnPremier = selectedSens === 'QtoR';
+
+   
+      const questionText = afficheQuestionEnPremier ? cardData.Question : cardData.Reponse;
+    const reponseText = afficheQuestionEnPremier ? cardData.Reponse : cardData.Question;
+
+    const flashcardDiv = document.createElement('div');
+    flashcardDiv.classList.add('flashcard');
+
+    const frontDiv = document.createElement('div');
+    frontDiv.classList.add('front');
+    frontDiv.textContent = questionText;
+    frontDiv.style.opacity = '1';
+    frontDiv.style.transition = 'opacity 1s ease-in-out';
+
+    const backDiv = document.createElement('div');
+    backDiv.classList.add('back', 'answer');
+    backDiv.textContent = reponseText;
+    backDiv.style.opacity = '0';
+    backDiv.style.transition = 'opacity 1s ease-in-out';
+
+    flashcardDiv.appendChild(frontDiv);
+    flashcardDiv.appendChild(backDiv);
+
+   const showAnswerBtn = document.createElement('button');
+showAnswerBtn.classList.add('show-answer-btn');
+// Créer l'élément i pour l'icône
+const iconElement = document.createElement('i');
+iconElement.classList.add('fa-solid', 'fa-eye'); // Initialiser avec l'icône "eye"
+showAnswerBtn.appendChild(iconElement); // Ajouter l'icône au bouton
+
+showAnswerBtn.onclick = () => {
+  if (iconElement.classList.contains('fa-eye')) {
+    frontDiv.style.opacity = '0';
+    backDiv.style.opacity = '1';
+    // Changer la classe pour afficher l'icône "eye-slash"
+    iconElement.classList.remove('fa-eye');
+    iconElement.classList.add('fa-eye-slash');
+  } else {
+    frontDiv.style.opacity = '1';
+    backDiv.style.opacity = '0';
+    // Changer la classe pour afficher l'icône "eye"
+    iconElement.classList.remove('fa-eye-slash');
+    iconElement.classList.add('fa-eye');
+  }
+};
+                flashcardDiv.appendChild(showAnswerBtn);
+
+                flashcardContent.appendChild(flashcardDiv);
+            } else {
+                flashcardContent.textContent = 'Vous avez terminé toutes les questions !';
+            }
+        }
+
+  function nextFlashcard() {
+    if (currentCardIndex < flashcardsData.length - 1) {
+      currentCardIndex++;
+      showFlashcard(currentCardIndex);
+      cardNumberDisplay.textContent = `Carte : ${currentCardIndex + 1}/${flashcardsData.length}`;
+      prevCardBtn.disabled = false; // Réactive "Précédente" quand on avance
+    }
+    nextCardBtn.disabled = currentCardIndex === flashcardsData.length - 1; // Désactive "Suivante" à la fin
+  }
+
+  function prevFlashcard() {
+    if (currentCardIndex > 0) {
+      currentCardIndex--;
+      showFlashcard(currentCardIndex);
+      cardNumberDisplay.textContent = `Carte : ${currentCardIndex + 1}/${flashcardsData.length}`;
+      nextCardBtn.disabled = false; // Réactive "Suivante" quand on recule
+    }
+    prevCardBtn.disabled = currentCardIndex === 0; // Désactive "Précédente" au début
+  }
+
+        // Charge les données au chargement de la page
+        document.addEventListener('DOMContentLoaded', onLoad);
+  </script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    $(function () {
+            $(document).keydown(function (e) {
+                if (e.key === "ArrowRight") {
+                    nextFlashcard();
+                } else if (e.key === " ") { // Espace pour afficher la réponse (peut être modifié)
+                    const answerDiv = document.querySelector('.flashcard .answer');
+                    if (answerDiv) {
+                        answerDiv.style.display = 'block';
+                    }
+                }
+            });
+        });
+  </script>
+</body>
+
+</html>
