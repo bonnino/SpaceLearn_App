@@ -9,13 +9,89 @@ function doGet(e) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+/* ---
+      Retourne une ligne de la feuille sous-forme de structure
+   --- */
+
+function getFlashcardRowData(sheetName, rowNumber) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    Logger.log(`Feuille "${sheetName}" non trouvée.`);
+    return null; // Ou tu pourrais lancer une erreur
+  }
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const rowValues = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  const rowData = {};
+  for (let i = 0; i < headers.length; i++) {
+    rowData[headers[i]] = rowValues[i];
+  }
+  return rowData;
+}
+
+function traiterPromotionCarte(rowNumber,maxBoites) {
+  Logger.log(`Fonction : traiterPromotionCarte, Paramètres : rowNumber = ${rowNumber}, maxBoites = ${maxBoites}`);
+  
+  const maLigne = getFlashcardRowData(FLASHCARDS_SHEET_NAME, rowNumber);  
+  const currentNbOk = maLigne.Nb_Ok || 0; // Récupère la valeur actuelle ou 0 si vide
+  maLigne.Nb_Ok = Number(currentNbOk) + 1;
+
+  // promotion de la boite 
+  if (maLigne.Id_Boite < maxBoites) {
+    maLigne.Id_Boite++ ;
+  }
+  Logger.log(`nouvel Id Boite = ${maLigne.Id_Boite}`);
+  if (setFlashcardRowData(FLASHCARDS_SHEET_NAME, rowNumber, maLigne)) {
+    return `Nombre de 'Je le savais' incrémenté pour la carte (ligne ${rowNumber}).`;
+  } else {
+    return "Erreur : Impossible de mettre à jour la carte.";
+  }
+}
 
 /*
-function initData() {
-  getBoites() ;
-  getFlashcards() ;
+   ---
+   Transfère une structure dans une ligne de la sheet
+   --- */
+function setFlashcardRowData(sheetName, rowNumber, data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    Logger.log(`Feuille "${sheetName}" non trouvée.`);
+    return false; // Indique que l'écriture a échoué
+  }
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const row = [];
+  for (let i = 0; i < headers.length; i++) {
+    row.push(data[headers[i]] !== undefined ? data[headers[i]] : ""); // Récupère la valeur ou une chaîne vide si non définie
+  }
+  sheet.getRange(rowNumber, 1, 1, headers.length).setValues([row]);
+  return true; // Indique que l'écriture a réussi
+}   
+
+function traiterRetrogradationCarte(rowNumber) {
+  Logger.log(`Fonction : traiterRetrogradationCarte, Paramètres : rowNumber = ${rowNumber}`);
+  // Ici, tu vas implémenter la logique pour "rétrograder" la carte
+  // Cela pourrait impliquer de modifier une colonne dans ta Google Sheet,
+  // par exemple, pour indiquer que la carte doit être vue plus souvent,
+  // ou déplacée vers une autre "boîte" de révision plus fréquente.
+
+  // Exemple de retour (facultatif) :
+  const maLigne = getFlashcardRowData(FLASHCARDS_SHEET_NAME, rowNumber);  
+  const currentNbKo = maLigne.Nb_Ko || 0; // Récupère la valeur actuelle ou 0 si vide
+  maLigne.Nb_Ko = Number(currentNbKo) + 1;
+
+  // retrogradation de la boite 
+  if (maLigne.Id_Boite > 1) {
+    maLigne.Id_Boite-- ;
+  }
+  Logger.log(`nouvel Id Boite = ${maLigne.Id_Boite}`);
+  
+  if (setFlashcardRowData(FLASHCARDS_SHEET_NAME, rowNumber, maLigne)) {
+    return `Nombre de 'Je ne savais pas' incrémenté pour la carte (ligne ${rowNumber}).`;
+  } else {
+    return "Erreur : Impossible de mettre à jour la carte.";
+  }
 }
-*/
 
 function getCategories() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
