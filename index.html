@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <!-- Intégration de bootstrap CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
@@ -12,6 +13,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flashcards</title>
+  <!-- Styles -->
   <style>
     body {
       padding: 1rem;
@@ -214,10 +216,10 @@
         <span class="visually-hidden">Carte suivante</span> <i class="fas fa-chevron-right"></i>
       </button>
       </button>
-      <button class="btn btn-success btn-lg" onclick="promouvoirCarte(flashcardsData[currentCardIndex].rowNumber)">
+      <button class="btn btn-success btn-lg" onclick="promouvoirCarte(G_flashcardsData[currentCardIndex].rowNumber)">
         <i class="fa-solid fa-thumbs-up"></i> <span class="visually-hidden">Je le savais</span>
       </button>
-      <button class="btn btn-danger btn-lg" onclick="retrograderCarte(flashcardsData[currentCardIndex].rowNumber)">
+      <button class="btn btn-danger btn-lg" onclick="retrograderCarte(G_flashcardsData[currentCardIndex].rowNumber)">
         <i class="fa-solid fa-thumbs-down"></i> <span class="visually-hidden">Je ne le savais pas</span>
       </button>      
       <button id="next-card-btn" class="btn btn-primary btn-lg" onclick="copierDansPressePapier()">
@@ -229,7 +231,8 @@
    --- PARTIE DYNAMIQUE ---
   -->
   <script>
-    let flashcardsData;
+    // Variables globales
+    let G_flashcardsData;
     let G_boites; 
     let currentBoiteId = -1 ;
     let currentCardIndex = 0;
@@ -266,17 +269,18 @@
     // Fonction pour afficher les flashcards
     function displayFlashcards(data) {
       console.log("displayFlashcards appelée avec les données :", data);
-      flashcardsData = data;
+      // Stockage dans la variable globale
+      G_flashcardsData = data;
       showFlashcard(currentCardIndex);
       // nombre total de cartes de la boite
-      cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
+      cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${G_flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
       // gestion des boutons
       if (currentCardIndex > 0) {
         prevCardBtn.disabled = false;
       } else {
         prevCardBtn.disabled = true;
       }
-      if (currentCardIndex < flashcardsData.length - 1) {
+      if (currentCardIndex < G_G_G_flashcardsData.length - 1) {
         nextCardBtn.disabled = false;
       } else {
         nextCardBtn.disabled = true;
@@ -367,11 +371,11 @@
     function showFlashcard(index) {
       console.log(`showFlashcard : index=${index}`)
 
-      console.log("Contenu de flashcardsData dans showFlashcard :", flashcardsData);
+      console.log("Contenu de G_flashcardsData dans showFlashcard :", G_flashcardsData);
       flashcardContent.innerHTML = '';
 
-      if (index < flashcardsData.length) {
-        const cardData = flashcardsData[index];
+      if (index < G_flashcardsData.length) {
+        const cardData = G_flashcardsData[index];
         console.log(`rowNumber=${cardData.rowNumber}`); // affichage du vrai numéro de ligne
 
         // Incrémente le compteur d'affichages en utilisant le numéro de ligne
@@ -435,20 +439,20 @@
     }
 
     function nextFlashcard() {
-      if (currentCardIndex < flashcardsData.length - 1) {
+      if (currentCardIndex < G_flashcardsData.length - 1) {
         currentCardIndex++;
         showFlashcard(currentCardIndex);
-        cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
+        cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${G_flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
         prevCardBtn.disabled = false; // Réactive "Précédente" quand on avance
       }
-      nextCardBtn.disabled = currentCardIndex === flashcardsData.length - 1; // Désactive "Suivante" à la fin
+      nextCardBtn.disabled = currentCardIndex === G_flashcardsData.length - 1; // Désactive "Suivante" à la fin
     }
 
     function prevFlashcard() {
       if (currentCardIndex > 0) {
         currentCardIndex--;
         showFlashcard(currentCardIndex);
-        cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
+        cardNumberDisplay.textContent =  `Carte : ${currentCardIndex + 1}/${G_flashcardsData.length} (boite : ${G_boites[currentBoiteId].Nom})`;
         nextCardBtn.disabled = false; // Réactive "Suivante" quand on recule
       }
       prevCardBtn.disabled = currentCardIndex === 0; // Désactive "Précédente" au début

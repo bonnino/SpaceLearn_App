@@ -1,7 +1,7 @@
 const FLASHCARDS_SHEET_NAME = 'Flashcards'; // Remplace par le nom de ta feuille si nécessaire
 const CATEGORIES_SHEET_NAME = 'Categories'; // Nom de ta feuille des catégories
 
-const BOITES_NAME = 'Boites';
+const CONST_BOITES_NAME = 'Boites';
 
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('index')
@@ -29,6 +29,30 @@ function getFlashcardRowData(sheetName, rowNumber) {
   return rowData;
 }
 
+/*
+   ---
+   Transfère une structure dans une ligne de la sheet
+   --- */
+   function setFlashcardRowData(sheetName, rowNumber, data) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      Logger.log(`Feuille "${sheetName}" non trouvée.`);
+      return false; // Indique que l'écriture a échoué
+    }
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const row = [];
+    for (let i = 0; i < headers.length; i++) {
+      row.push(data[headers[i]] !== undefined ? data[headers[i]] : ""); // Récupère la valeur ou une chaîne vide si non définie
+    }
+    sheet.getRange(rowNumber, 1, 1, headers.length).setValues([row]);
+    return true; // Indique que l'écriture a réussi
+  } 
+
+
+/* --- 
+   Promotion / retrogradation 
+   --- */
 function traiterPromotionCarte(rowNumber,maxBoites) {
   Logger.log(`Fonction : traiterPromotionCarte, Paramètres : rowNumber = ${rowNumber}, maxBoites = ${maxBoites}`);
   
@@ -48,25 +72,7 @@ function traiterPromotionCarte(rowNumber,maxBoites) {
   }
 }
 
-/*
-   ---
-   Transfère une structure dans une ligne de la sheet
-   --- */
-function setFlashcardRowData(sheetName, rowNumber, data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    Logger.log(`Feuille "${sheetName}" non trouvée.`);
-    return false; // Indique que l'écriture a échoué
-  }
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const row = [];
-  for (let i = 0; i < headers.length; i++) {
-    row.push(data[headers[i]] !== undefined ? data[headers[i]] : ""); // Récupère la valeur ou une chaîne vide si non définie
-  }
-  sheet.getRange(rowNumber, 1, 1, headers.length).setValues([row]);
-  return true; // Indique que l'écriture a réussi
-}   
+  
 
 function traiterRetrogradationCarte(rowNumber) {
   Logger.log(`Fonction : traiterRetrogradationCarte, Paramètres : rowNumber = ${rowNumber}`);
@@ -93,6 +99,9 @@ function traiterRetrogradationCarte(rowNumber) {
   }
 }
 
+/* --- 
+   Récupère les catégories et les renvoie dans un tableau d'objets
+   --- */
 function getCategories() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(CATEGORIES_SHEET_NAME);
@@ -116,9 +125,12 @@ function getCategories() {
   return categories;
 }
 
+/* --- 
+   Récupère les boîtes et les renvoie dans un tableau d'objets 
+   --- */
 function getBoites() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(BOITES_NAME);
+  const sheet = ss.getSheetByName(CONST_BOITES_NAME);
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
 
@@ -137,6 +149,9 @@ function getBoites() {
   return boites;
 }
 
+/* --- 
+   Récupère les flashcards pour une catégorie et une boîte spécifiques et retourne un tableau d'objets
+   --- */
 function getFlashcardsForBoiteAndCategory(idBoite, idCategorie) {
   Logger.log(`getFlashcardsForBoiteAndCategory appelée avec boite ID: ${idBoite} et catégorie ID: ${idCategorie}`);
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -170,11 +185,11 @@ function getFlashcardsForBoiteAndCategory(idBoite, idCategorie) {
   return flashcardsForBoiteAndCategory;
 }
 
-/* 
-   --- MISE A JOUR DES STATS DE LA CARTE ---
-   Compteur de visualisations
-   Date de dernière visualisation
-*/
+/* ---
+      MISE A JOUR DES STATS DE LA CARTE à partir de son numéro de ligne
+      - Compteur de visualisations
+      - Date de dernière visualisation
+   --- */
 function updateCardStats(rowNumber) {
   Logger.log(`Numéro de ligne ${rowNumber}`);
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -203,5 +218,5 @@ function updateCardStats(rowNumber) {
   const lastReviewedCell = sheet.getRange(`${lastReviewedColumnLetter}${rowNumber}`);
   lastReviewedCell.setValue(new Date()); // Enregistre la date actuelle
 
-  Logger.log(`Compteur 'Nb_Affichage' incrémenté pour la ligne ${rowNumber}.`);
+  Logger.log(`Compteur 'Nb_Affichages' incrémenté pour la ligne ${rowNumber}.`);
 }
