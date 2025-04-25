@@ -1,0 +1,183 @@
+
+body {
+    padding: 1rem;
+    font-size: 1.2rem;
+    background-color: #f0f4c3;
+    /* Vert pastel */
+  }
+
+  .study-section {
+    padding: 0.5em 0 0.5em 0 ;  
+  }
+
+  .flashcard-container {
+    border: 1px solid #ccc;
+    padding: 3rem;
+    //margin-bottom: 3rem;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+  }
+
+  .flashcard-content {
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-align: center;
+    //margin-bottom: 3rem;
+  }
+
+  .flashcard-controls {
+    padding: 0.5em 0 0.5em 0 ;  
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+  }
+
+ .flashcard-controls button {
+    min-width: 34px; /* Ajustez cette valeur */
+    /* ou width: 100px; si vous voulez une largeur fixe */
+
+    /* Si vous utilisez width fixe et que le contenu est plus étroit, vous pouvez centrer le contenu : */
+    /* display: flex; */
+    /* justify-content: center; */
+    /* align-items: center; */
+  } 
+
+  #prev-card-btn,
+  #next-card-btn {
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  #prev-card-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+  .show-answer-btn {
+    min-width: 34px; 
+    margin: 0.5em 0 0.5em 0;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .show-answer-btn:hover {
+    background-color: #367c39;
+  }
+
+  .flashcard {
+    position: relative;
+    perspective: 1000px;
+    width: 100%;
+    /* height: auto;  Enlever la hauteur auto pour pouvoir la fixer */
+    height: 200px;
+    /* Ajout d'une hauteur fixe */
+    min-height: 200px;
+    /* Garder min-height pour assurer une hauteur minimale */
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+
+  .flashcard.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flashcard .front,
+  .flashcard .back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: top;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .flashcard .front {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+  }
+
+  .flashcard .back {
+    background-color: #82e0aa;
+    color: #1a5235;
+  }
+
+  .flashcard .front.fade-out {
+    opacity: 0;
+  }
+
+  .flashcard .back.fade-in {
+    opacity: 1;
+  }
+
+  .btn-lg {
+    font-size: 1.2rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .form-select {
+    font-size: 1.2rem;
+    padding: 0.75rem;
+  }
+
+      .btn-group input[type="radio"] {
+      position: absolute;
+      clip: rect(0, 0, 0, 0);
+      pointer-events: none;
+    }
+    /* Optionnel: vos styles actifs personnalisés si vous en avez */
+     .btn.active,
+     .btn:active {
+       /* Inclure ici les styles pour un effet "enfoncé" plus prononcé si désiré */
+       box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.3);
+       transform: translateY(2px);
+       /* etc. */
+     }
+
+  @media screen and (max-width: 600px) {
+    body {
+      font-size: 1rem;
+    }
+
+    .flashcard-content {
+      font-size: 1.3rem;
+    }
+
+    #prev-card-btn,
+    #next-card-btn,
+    .show-answer-btn,
+    .btn-lg,
+    .form-select {
+      font-size: 1rem;
+    }
+
+    .flashcard .front,
+    .flashcard .back {
+      font-size: 1.3rem;
+    }
+  }
