@@ -1,341 +1,372 @@
 <script>
 
-
-
-
-    // Fonction pour afficher les flashcards
-    function displayFlashcards(data) {
-      console.log("displayFlashcards appelée avec les données :", data);
-      // Stockage dans la variable globale
-      G_flashcardsData = data;
-      showFlashcard(G_currentCardIndex);
-      // nombre total de cartes de la boite
-      // G_elt_cardNumberDisplay.textContent = `Carte : ${G_currentCardIndex + 1}/${G_flashcardsData.length} (boite : ${G_boites[G_currentBoiteId].Nom})`;
-      G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
-      // gestion des boutons
-      if (G_currentCardIndex > 0) {
-        G_elt_prevCardBtn.disabled = false;
-      } else {
-        G_elt_prevCardBtn.disabled = true;
+  // Définition de l'objet helper debug
+  const debug = {
+    log: function(...args) {
+      if (G_DEBUG_MODE) { // Utilise G_DEBUG_MODE
+        console.log("DEBUG CLIENT:", ...args);
       }
-      if (G_currentCardIndex < G_flashcardsData.length - 1) {
-        G_elt_nextCardBtn.disabled = false;
-      } else {
-        G_elt_nextCardBtn.disabled = true;
-      }
+    },
+    info: function(...args) { /* ... */ if (G_DEBUG_MODE) console.info("DEBUG CLIENT INFO:", ...args); /* ... */ },
+    warn: function(...args) { /* ... */ if (G_DEBUG_MODE) console.warn("DEBUG CLIENT WARNING:", ...args); /* ... */ },
+    error: function(...args) { /* ... */ if (G_DEBUG_MODE) console.error("DEBUG CLIENT ERROR:", ...args); /* ... */ }
     
-      G_elt_flashcardContainer.style.display = 'block';
+  };
+  
+  
+  // Fonction pour afficher les flashcards
+  function displayFlashcards(data) {
+   
+    debug.log("displayFlashcards appelée avec les données :", data);
+  
+    // Stockage dans la variable globale
+    G_flashcardsData = data;
+    showFlashcard(G_currentCardIndex);
+    // nombre total de cartes de la boite
+    // G_elt_cardNumberDisplay.textContent = `Carte : ${G_currentCardIndex + 1}/${G_flashcardsData.length} (boite : ${G_boites[G_currentBoiteId].Nom})`;
+    G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
+    // gestion des boutons
+    if (G_currentCardIndex > 0) {
+      G_elt_prevCardBtn.disabled = false;
+    } else {
+      G_elt_prevCardBtn.disabled = true;
     }
-    
-    // Stockage des categories
-    
-    function handleCategories(categories) {
-      if (G_elt_categoryList) {
-        categories.forEach(categorie => {
-          const option = document.createElement('option');
-          option.value = categorie.Id;
-          option.textContent = categorie.Nom.trim();
-          G_elt_categoryList.appendChild(option);
-        });
-    
-        G_elt_categoryList.addEventListener('change', () => {
-          const selectedCategoryId = G_elt_categoryList.value;
-          if (selectedCategoryId !== "-1") {
-            console.log(`Catégorie sélectionnée (ID: ${selectedCategoryId}) !`);
-            //G_currentCategoryId = selectedCategoryId;
-            G_currentCategoryId = parseInt(selectedCategoryId);
-            G_elt_studySection.style.display = 'block'; // Affiche la section des boîtes
-          } else {
-            G_elt_studySection.style.display = 'none'; // Cache la section des boîtes si aucune catégorie n'est sélectionnée
-            G_elt_flashcardContainer.style.display = 'none'; // Cache le conteneur des flashcards
-          }
-        });
-      } else {
-        console.error("L'élément category-list n'a pas été trouvé dans le HTML.");
-      }
-    
-      // Cache initialement la section des flashcards
-      //G_elt_studySection.style.display = 'none';
-      G_elt_flashcardContainer.style.display = 'none';
+    if (G_currentCardIndex < G_flashcardsData.length - 1) {
+      G_elt_nextCardBtn.disabled = false;
+    } else {
+      G_elt_nextCardBtn.disabled = true;
     }
-    
-    // stockage des boites 
-    
-    function handleBoites(boites) {
-      if (G_elt_studySection) {
-        // Créez un conteneur pour le groupe de boutons
-        const buttonGroup = document.createElement('div');
-        buttonGroup.className = 'btn-group'; // Classe Bootstrap pour le groupe de boutons
-        buttonGroup.setAttribute('role', 'group'); // Rôle ARIA pour l'accessibilité
-        buttonGroup.setAttribute('aria-label', 'Sélection de la boîte'); // Label ARIA
-    
-        G_boites = {}; // Réinitialise les boîtes globales si nécessaire
-    
-        boites.forEach(boite => {
-          const nomBoite = boite.Nom;
-          const idBoite = boite.Id;
-          const button = document.createElement('button');
-    
-          // Utilisez les classes Bootstrap pour les boutons
-          button.className = 'btn btn-outline-primary'; // Souvent utilisé pour les groupes toggle car l'outline devient plein en actif
-          // button.className = 'btn btn-primary'; // Vous pouvez aussi utiliser btn-primary si vous préférez l'effet sur le bouton plein
-    
-          button.textContent = nomBoite.trim();
-          //button.style.marginBottom = '10px'; // Ces styles sont moins typiques dans un btn-group, retirez-les si vous voulez qu'ils soient collés
-          //button.style.marginRight = '10px';
-    
-          button.dataset.boiteId = idBoite; // Stocke l'ID de la boîte sur le bouton
-    
-          // on stocke les boites dans le contexte de la page
-          G_boites[idBoite] = boite; // On utilise l'ID comme clé
-    
-          // Ajoutez l'attribut aria-pressed par défaut (non pressé)
-          button.setAttribute('aria-pressed', 'false');
-    
-          button.addEventListener('click', (event) => {
-            console.log(`Bouton ${nomBoite.trim()} (ID: ${idBoite}) cliqué !`);
-    
-            // --- Logique pour gérer l'état actif des boutons ---
-    
-            // 1. Trouvez le groupe de boutons parent
-            const parentGroup = event.target.closest('.btn-group');
-    
-            if (parentGroup) {
-              // 2. Parcourez tous les boutons dans ce groupe
-              const buttonsInGroup = parentGroup.querySelectorAll('.btn');
-    
-              buttonsInGroup.forEach(btn => {
-                // 3. Supprimez la classe active et l'attribut aria-pressed des autres boutons
-                btn.classList.remove('active');
-                btn.setAttribute('aria-pressed', 'false');
-              });
-    
-              // 4. Ajoutez la classe active et l'attribut aria-pressed au bouton cliqué
-              event.target.classList.add('active');
-              event.target.setAttribute('aria-pressed', 'true');
-    
-              // Optionnel: Si vous voulez déclencher votre logique de chargement des flashcards
-              // uniquement si le bouton n'était PAS déjà actif
-              //if (event.target.classList.contains('active')) { // Cette vérification n'est pas nécessaire avec la logique ci-dessus car on ajoute toujours active au clicé
-              console.log("G_currentCategoryId au moment du clic :", G_currentCategoryId);
-              // on stocke la boite en cours dans le contexte de la page
-              G_currentBoiteId = idBoite;
-              G_currentCardIndex = 0;
-              console.log(`Id Boite : ${G_currentBoiteId}`);
-              console.log(`Nom Boite : ${G_boites[G_currentBoiteId].Nom}`);
-    
-              google.script.run
-                .withSuccessHandler(function (flashcards) {
-                  console.log("Données reçues de getFlashcardsForBoiteAndCategory :", flashcards);
-                  displayFlashcards(flashcards); // Assurez-vous que displayFlashcards gère l'affichage
-                })
-                .getFlashcardsForBoiteAndCategory(idBoite, G_currentCategoryId);
-    
-              console.log("Appel à google.script.run effectué.");
-              //}
-            }
-            // --- Fin de la logique de gestion de l'état actif ---
-    
-    
-          });
-    
-          // Ajoutez le bouton au conteneur du groupe
-          buttonGroup.appendChild(button);
-        });
-    
-        // Ajoutez le groupe de boutons complété à votre section d'étude
-        G_elt_studySection.innerHTML = ''; // Videz la section avant d'ajouter le nouveau groupe
-        G_elt_studySection.appendChild(buttonGroup);
-      }
-    }
-    
-    
-    // Fonction pour afficher une flashcard spécifique
-    function showFlashcard(index) {
-      console.log(`showFlashcard : index=${index}`)
-    
-      console.log("Contenu de G_flashcardsData dans showFlashcard :", G_flashcardsData);
-      G_elt_flashcardContent.innerHTML = '';
-    
-      if (index < G_flashcardsData.length) {
-        const cardData = G_flashcardsData[index];
-        console.log(`rowNumber=${cardData.rowNumber}`); // affichage du vrai numéro de ligne
-    
-        // Incrémente le compteur d'affichages en utilisant le numéro de ligne
-        if (cardData.rowNumber) {
-          google.script.run.updateCardStats(cardData.rowNumber);
+  
+    G_elt_flashcardContainer.style.display = 'block';
+  }
+  
+  // Stockage des categories
+  
+  function handleCategories(categories) {
+    if (G_elt_categoryList) {
+      categories.forEach(categorie => {
+        const option = document.createElement('option');
+        option.value = categorie.Id;
+        option.textContent = categorie.Nom.trim();
+        G_elt_categoryList.appendChild(option);
+      });
+  
+      G_elt_categoryList.addEventListener('change', () => {
+        const selectedCategoryId = G_elt_categoryList.value;
+        if (selectedCategoryId !== "-1") {
+          console.log(`Catégorie sélectionnée (ID: ${selectedCategoryId}) !`);
+          //G_currentCategoryId = selectedCategoryId;
+          G_currentCategoryId = parseInt(selectedCategoryId);
+          G_elt_studySection.style.display = 'block'; // Affiche la section des boîtes
+        } else {
+          G_elt_studySection.style.display = 'none'; // Cache la section des boîtes si aucune catégorie n'est sélectionnée
+          G_elt_flashcardContainer.style.display = 'none'; // Cache le conteneur des flashcards
         }
-    
-        const selectedSens = G_elt_sensControls.querySelector('input[name="sens"]:checked').value;
-        const afficheQuestionEnPremier = selectedSens === 'QtoR';
-    
-    
-        const questionText = afficheQuestionEnPremier ? cardData.Question : cardData.Reponse;
-        const reponseText = afficheQuestionEnPremier ? cardData.Reponse : cardData.Question;
-    
-        const flashcardDiv = document.createElement('div');
-        flashcardDiv.classList.add('flashcard');
-    
-        const frontDiv = document.createElement('div');
-        frontDiv.classList.add('front');
-        frontDiv.textContent = questionText;
-        frontDiv.style.opacity = '1';
-        frontDiv.style.transition = 'opacity 1s ease-in-out';
-    
-        const backDiv = document.createElement('div');
-        backDiv.classList.add('back', 'answer');
-        backDiv.textContent = reponseText;
-        backDiv.style.opacity = '0';
-        backDiv.style.transition = 'opacity 1s ease-in-out';
-    
-        flashcardDiv.appendChild(frontDiv);
-        flashcardDiv.appendChild(backDiv);
-    
-        const showAnswerBtn = document.createElement('button');
-        showAnswerBtn.classList.add('show-answer-btn');
-        // Créer l'élément i pour l'icône
-        const iconElement = document.createElement('i');
-        iconElement.classList.add('fa-solid', 'fa-eye'); // Initialiser avec l'icône "eye"
-        showAnswerBtn.appendChild(iconElement); // Ajouter l'icône au bouton
-    
-        showAnswerBtn.onclick = () => {
-          if (iconElement.classList.contains('fa-eye')) {
-            frontDiv.style.opacity = '0';
-            backDiv.style.opacity = '1';
-            // Changer la classe pour afficher l'icône "eye-slash"
-            iconElement.classList.remove('fa-eye');
-            iconElement.classList.add('fa-eye-slash');
-          } else {
-            frontDiv.style.opacity = '1';
-            backDiv.style.opacity = '0';
-            // Changer la classe pour afficher l'icône "eye"
-            iconElement.classList.remove('fa-eye-slash');
-            iconElement.classList.add('fa-eye');
+      });
+    } else {
+      console.error("L'élément category-list n'a pas été trouvé dans le HTML.");
+    }
+  
+    // Cache initialement la section des flashcards
+    //G_elt_studySection.style.display = 'none';
+    G_elt_flashcardContainer.style.display = 'none';
+  }
+  
+  // stockage des boites 
+  function handleBoites(boites) {
+    if (G_elt_studySection) {
+      // Créez un conteneur pour le groupe de boutons
+      const buttonGroup = document.createElement('div');
+      buttonGroup.className = 'btn-group'; // Classe Bootstrap pour le groupe de boutons
+      buttonGroup.setAttribute('role', 'group'); // Rôle ARIA pour l'accessibilité
+      buttonGroup.setAttribute('aria-label', 'Sélection de la boîte'); // Label ARIA
+  
+      G_boites = {}; // Réinitialise les boîtes globales si nécessaire
+  
+      boites.forEach(boite => {
+        const nomBoite = boite.Nom;
+        const idBoite = boite.Id;
+        const button = document.createElement('button');
+  
+        // Utilisez les classes Bootstrap pour les boutons
+        button.className = 'btn btn-outline-primary'; // Souvent utilisé pour les groupes toggle car l'outline devient plein en actif
+        // button.className = 'btn btn-primary'; // Vous pouvez aussi utiliser btn-primary si vous préférez l'effet sur le bouton plein
+  
+        button.textContent = nomBoite.trim();
+        //button.style.marginBottom = '10px'; // Ces styles sont moins typiques dans un btn-group, retirez-les si vous voulez qu'ils soient collés
+        //button.style.marginRight = '10px';
+  
+        button.dataset.boiteId = idBoite; // Stocke l'ID de la boîte sur le bouton
+  
+        // on stocke les boites dans le contexte de la page
+        G_boites[idBoite] = boite; // On utilise l'ID comme clé
+  
+        // Ajoutez l'attribut aria-pressed par défaut (non pressé)
+        button.setAttribute('aria-pressed', 'false');
+  
+        button.addEventListener('click', (event) => {
+          console.log(`Bouton ${nomBoite.trim()} (ID: ${idBoite}) cliqué !`);
+  
+          // --- Logique pour gérer l'état actif des boutons ---
+  
+          // 1. Trouvez le groupe de boutons parent
+          const parentGroup = event.target.closest('.btn-group');
+  
+          if (parentGroup) {
+            // 2. Parcourez tous les boutons dans ce groupe
+            const buttonsInGroup = parentGroup.querySelectorAll('.btn');
+  
+            buttonsInGroup.forEach(btn => {
+              // 3. Supprimez la classe active et l'attribut aria-pressed des autres boutons
+              btn.classList.remove('active');
+              btn.setAttribute('aria-pressed', 'false');
+            });
+  
+            // 4. Ajoutez la classe active et l'attribut aria-pressed au bouton cliqué
+            event.target.classList.add('active');
+            event.target.setAttribute('aria-pressed', 'true');
+  
+            // Optionnel: Si vous voulez déclencher votre logique de chargement des flashcards
+            // uniquement si le bouton n'était PAS déjà actif
+            //if (event.target.classList.contains('active')) { // Cette vérification n'est pas nécessaire avec la logique ci-dessus car on ajoute toujours active au clicé
+            console.log("G_currentCategoryId au moment du clic :", G_currentCategoryId);
+            // on stocke la boite en cours dans le contexte de la page
+            G_currentBoiteId = idBoite;
+            G_currentCardIndex = 0;
+            console.log(`Id Boite : ${G_currentBoiteId}`);
+            console.log(`Nom Boite : ${G_boites[G_currentBoiteId].Nom}`);
+  
+            google.script.run
+              .withSuccessHandler(function (flashcards) {
+                console.log("Données reçues de getFlashcardsForBoiteAndCategory :", flashcards);
+                displayFlashcards(flashcards); // Assurez-vous que displayFlashcards gère l'affichage
+              })
+              .getFlashcardsForBoiteAndCategory(idBoite, G_currentCategoryId);
+  
+            console.log("Appel à google.script.run effectué.");
+            //}
           }
-        };
-        flashcardDiv.appendChild(showAnswerBtn);
-    
-        G_elt_flashcardContent.appendChild(flashcardDiv);
-      } else {
-        G_elt_flashcardContent.textContent = 'Vous avez terminé toutes les questions !';
+          // --- Fin de la logique de gestion de l'état actif ---
+  
+  
+        });
+  
+        // Ajoutez le bouton au conteneur du groupe
+        buttonGroup.appendChild(button);
+      });
+  
+      // Ajoutez le groupe de boutons complété à votre section d'étude
+      G_elt_studySection.innerHTML = ''; // Videz la section avant d'ajouter le nouveau groupe
+      G_elt_studySection.appendChild(buttonGroup);
+    }
+  }
+  
+  
+  // Fonction pour afficher une flashcard spécifique
+  function showFlashcard(index) {
+    console.log(`showFlashcard : index=${index}`)
+  
+    console.log("Contenu de G_flashcardsData dans showFlashcard :", G_flashcardsData);
+    G_elt_flashcardContent.innerHTML = '';
+  
+    if (index < G_flashcardsData.length) {
+      const cardData = G_flashcardsData[index];
+      console.log(`rowNumber=${cardData.rowNumber}`); // affichage du vrai numéro de ligne
+  
+      // Incrémente le compteur d'affichages en utilisant le numéro de ligne
+      if (cardData.rowNumber) {
+        google.script.run.updateCardStats(cardData.rowNumber);
       }
-    }
-    
-    function nextFlashcard() {
-      if (G_currentCardIndex < G_flashcardsData.length - 1) {
-        G_currentCardIndex++;
-        showFlashcard(G_currentCardIndex);
-        G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
-        G_elt_prevCardBtn.disabled = false; // Réactive "Précédente" quand on avance
-      }
-      G_elt_nextCardBtn.disabled = G_currentCardIndex === G_flashcardsData.length - 1; // Désactive "Suivante" à la fin
-    }
-    
-    function prevFlashcard() {
-      if (G_currentCardIndex > 0) {
-        G_currentCardIndex--;
-        showFlashcard(G_currentCardIndex);
-        G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
-        G_elt_nextCardBtn.disabled = false; // Réactive "Suivante" quand on recule
-      }
-      G_elt_prevCardBtn.disabled = G_currentCardIndex === 0; // Désactive "Précédente" au début
-    }
-    
-    /*
-       --- Promotion et retrogradation
-      */
-    function promouvoirCarte(rowNumber) {
-      console.log("Fonction : promouvoirCarte, Paramètres : rowNumber =", rowNumber);
-      google.script.run.withSuccessHandler(handlePromotionSuccess).withFailureHandler(handlePromotionFailure).traiterPromotionCarte(rowNumber, Object.keys(G_boites).length);
-    }
-    
-    function retrograderCarte(rowNumber) {
-      console.log("Fonction : retrograderCarte, Paramètres : rowNumber =", rowNumber);
-      google.script.run.withSuccessHandler(handleRetrogradationSuccess).withFailureHandler(handleRetrogradationFailure).traiterRetrogradationCarte(rowNumber);
-    }
-    
-    function handlePromotionSuccess(result) {
-      console.log("Promotion réussie :", result);
-      afficherMessage("Carte promue !", "success");
-      // Ici, tu peux mettre à jour l'interface utilisateur si nécessaire
-    }
-    
-    function handlePromotionFailure(error) {
-      console.error("Erreur lors de la promotion :", error);
-      afficherMessage("Erreur lors de la promotion : " + error, "error");
-      // Ici, tu peux afficher un message d'erreur à l'utilisateur
-    }
-    
-    function handleRetrogradationSuccess(result) {
-      console.log("Rétrogradation réussie :", result);
-      afficherMessage("Carte rétrogradée !", "info");
-      // Ici, tu peux mettre à jour l'interface utilisateur si nécessaire
-    }
-    
-    function handleRetrogradationFailure(error) {
-      console.error("Erreur lors de la rétrogradation :", error);
-      afficherMessage("Erreur lors de la rétrogradation : " + error, "error");
-      // Ici, tu peux afficher un message d'erreur à l'utilisateur
-    }
-    // Collage dans le presse-papier
-    function copierDansPressePapier() {
-      console.log('copierDansPressePapier');
+  
       const selectedSens = G_elt_sensControls.querySelector('input[name="sens"]:checked').value;
       const afficheQuestionEnPremier = selectedSens === 'QtoR';
-      const texte = document.querySelector('.flashcard > .front[style*="opacity: 1"], .flashcard > .back[style*="opacity: 1"]').textContent;
-      console.log('Texte a copier  : ', texte);
-      if (!navigator.clipboard) {
-        // La Clipboard API n'est pas supportée dans ce navigateur (cas rare)
-        console.warn("Clipboard API non supportée. Utilisation d'une méthode alternative dépréciée.");
-        copierTexteAlternative(texte); // Utiliser une méthode alternative
-        return;
-      }
-      navigator.clipboard.writeText(texte).then(() => {
-        console.log('Texte copié dans le presse-papier : ', texte);
-        // Vous pouvez ajouter ici un feedback visuel, comme un toast ou un message
-        afficherMessage("Texte copié !", "success"); // Utilisez une fonction d'affichage de message
-      }).catch(err => {
-        console.error('Erreur lors de la copie : ', err);
-        afficherMessage("Erreur lors de la copie : " + err, "error"); // Gérez l'erreur
-      });
+  
+  
+      const questionText = afficheQuestionEnPremier ? cardData.Question : cardData.Reponse;
+      const reponseText = afficheQuestionEnPremier ? cardData.Reponse : cardData.Question;
+  
+      const flashcardDiv = document.createElement('div');
+      flashcardDiv.classList.add('flashcard');
+  
+      const frontDiv = document.createElement('div');
+      frontDiv.classList.add('front');
+      frontDiv.textContent = questionText;
+      frontDiv.style.opacity = '1';
+      frontDiv.style.transition = 'opacity 1s ease-in-out';
+  
+      const backDiv = document.createElement('div');
+      backDiv.classList.add('back', 'answer');
+      backDiv.textContent = reponseText;
+      backDiv.style.opacity = '0';
+      backDiv.style.transition = 'opacity 1s ease-in-out';
+  
+      flashcardDiv.appendChild(frontDiv);
+      flashcardDiv.appendChild(backDiv);
+  
+      const showAnswerBtn = document.createElement('button');
+      showAnswerBtn.classList.add('show-answer-btn');
+      // Créer l'élément i pour l'icône
+      const iconElement = document.createElement('i');
+      iconElement.classList.add('fa-solid', 'fa-eye'); // Initialiser avec l'icône "eye"
+      showAnswerBtn.appendChild(iconElement); // Ajouter l'icône au bouton
+  
+      showAnswerBtn.onclick = () => {
+        if (iconElement.classList.contains('fa-eye')) {
+          frontDiv.style.opacity = '0';
+          backDiv.style.opacity = '1';
+          // Changer la classe pour afficher l'icône "eye-slash"
+          iconElement.classList.remove('fa-eye');
+          iconElement.classList.add('fa-eye-slash');
+        } else {
+          frontDiv.style.opacity = '1';
+          backDiv.style.opacity = '0';
+          // Changer la classe pour afficher l'icône "eye"
+          iconElement.classList.remove('fa-eye-slash');
+          iconElement.classList.add('fa-eye');
+        }
+      };
+      flashcardDiv.appendChild(showAnswerBtn);
+  
+      G_elt_flashcardContent.appendChild(flashcardDiv);
+    } else {
+      G_elt_flashcardContent.textContent = 'Vous avez terminé toutes les questions !';
     }
-    
-    
-    function afficherMessage(message, type = 'info') {
-      // Créer un élément div pour le message
-      const messageDiv = document.createElement('div');
-      messageDiv.textContent = message;
-      messageDiv.style.position = 'fixed'; // Positionnement pour ne pas interférer avec le layout
-      messageDiv.style.top = '20px';      // Ajustez la position verticale
-      messageDiv.style.left = '50%';
-      messageDiv.style.transform = 'translateX(-50%)'; // Centrer horizontalement
-      messageDiv.style.backgroundColor = type === 'success' ? '#4CAF50' : (type === 'error' ? '#FF5252' : '#F5B221'); // Vert, Rouge, Orange
-      messageDiv.style.color = 'white';
-      messageDiv.style.padding = '10px 20px';
-      messageDiv.style.borderRadius = '5px';
-      messageDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)'; // Ombre pour la visibilité
-      messageDiv.style.zIndex = '1000'; // Assurez-vous qu'il est au-dessus des autres éléments
-      messageDiv.style.transition = 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out'; // Transition douce
-      messageDiv.style.opacity = '0'; // Débuter invisible
-      messageDiv.style.transform = 'translate(-50%, -30px)'; // Débuter au dessus
-    
-      document.body.appendChild(messageDiv); // Ajouter au DOM
-    
-      // Animation d'apparition
+  }
+  
+  function nextFlashcard() {
+    if (G_currentCardIndex < G_flashcardsData.length - 1) {
+      G_currentCardIndex++;
+      showFlashcard(G_currentCardIndex);
+      G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
+      G_elt_prevCardBtn.disabled = false; // Réactive "Précédente" quand on avance
+    }
+    G_elt_nextCardBtn.disabled = G_currentCardIndex === G_flashcardsData.length - 1; // Désactive "Suivante" à la fin
+  }
+  
+  function prevFlashcard() {
+    if (G_currentCardIndex > 0) {
+      G_currentCardIndex--;
+      showFlashcard(G_currentCardIndex);
+      G_elt_cardNumberDisplay.textContent = `${G_currentCardIndex + 1}/${G_flashcardsData.length}`;
+      G_elt_nextCardBtn.disabled = false; // Réactive "Suivante" quand on recule
+    }
+    G_elt_prevCardBtn.disabled = G_currentCardIndex === 0; // Désactive "Précédente" au début
+  }
+  
+  /*
+     --- Promotion et retrogradation
+    */
+  function promouvoirCarte(rowNumber) {
+    console.log("Fonction : promouvoirCarte, Paramètres : rowNumber =", rowNumber);
+    google.script.run.withSuccessHandler(handlePromotionSuccess).withFailureHandler(handlePromotionFailure).traiterPromotionCarte(rowNumber, Object.keys(G_boites).length);
+  }
+  
+  function retrograderCarte(rowNumber) {
+    console.log("Fonction : retrograderCarte, Paramètres : rowNumber =", rowNumber);
+    google.script.run.withSuccessHandler(handleRetrogradationSuccess).withFailureHandler(handleRetrogradationFailure).traiterRetrogradationCarte(rowNumber);
+  }
+  
+  function handlePromotionSuccess(result) {
+    console.log("Promotion réussie :", result);
+    afficherMessage("Carte promue !", "success");
+    // Ici, tu peux mettre à jour l'interface utilisateur si nécessaire
+  }
+  
+  function handlePromotionFailure(error) {
+    console.error("Erreur lors de la promotion :", error);
+    afficherMessage("Erreur lors de la promotion : " + error, "error");
+    // Ici, tu peux afficher un message d'erreur à l'utilisateur
+  }
+  
+  function handleRetrogradationSuccess(result) {
+    console.log("Rétrogradation réussie :", result);
+    afficherMessage("Carte rétrogradée !", "info");
+    // Ici, tu peux mettre à jour l'interface utilisateur si nécessaire
+  }
+  
+  function handleRetrogradationFailure(error) {
+    console.error("Erreur lors de la rétrogradation :", error);
+    afficherMessage("Erreur lors de la rétrogradation : " + error, "error");
+    // Ici, tu peux afficher un message d'erreur à l'utilisateur
+  }
+  // Collage dans le presse-papier
+  function copierDansPressePapier() {
+    console.log('copierDansPressePapier');
+    const selectedSens = G_elt_sensControls.querySelector('input[name="sens"]:checked').value;
+    const afficheQuestionEnPremier = selectedSens === 'QtoR';
+    const texte = document.querySelector('.flashcard > .front[style*="opacity: 1"], .flashcard > .back[style*="opacity: 1"]').textContent;
+    console.log('Texte a copier  : ', texte);
+    if (!navigator.clipboard) {
+      // La Clipboard API n'est pas supportée dans ce navigateur (cas rare)
+      console.warn("Clipboard API non supportée. Utilisation d'une méthode alternative dépréciée.");
+      copierTexteAlternative(texte); // Utiliser une méthode alternative
+      return;
+    }
+    navigator.clipboard.writeText(texte).then(() => {
+      console.log('Texte copié dans le presse-papier : ', texte);
+      // Vous pouvez ajouter ici un feedback visuel, comme un toast ou un message
+      afficherMessage("Texte copié !", "success"); // Utilisez une fonction d'affichage de message
+    }).catch(err => {
+      console.error('Erreur lors de la copie : ', err);
+      afficherMessage("Erreur lors de la copie : " + err, "error"); // Gérez l'erreur
+    });
+  }
+  
+  
+  function afficherMessage(message, type = 'info') {
+    // Créer un élément div pour le message
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = message;
+    messageDiv.style.position = 'fixed'; // Positionnement pour ne pas interférer avec le layout
+    messageDiv.style.top = '20px';      // Ajustez la position verticale
+    messageDiv.style.left = '50%';
+    messageDiv.style.transform = 'translateX(-50%)'; // Centrer horizontalement
+    messageDiv.style.backgroundColor = type === 'success' ? '#4CAF50' : (type === 'error' ? '#FF5252' : '#F5B221'); // Vert, Rouge, Orange
+    messageDiv.style.color = 'white';
+    messageDiv.style.padding = '10px 20px';
+    messageDiv.style.borderRadius = '5px';
+    messageDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)'; // Ombre pour la visibilité
+    messageDiv.style.zIndex = '1000'; // Assurez-vous qu'il est au-dessus des autres éléments
+    messageDiv.style.transition = 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out'; // Transition douce
+    messageDiv.style.opacity = '0'; // Débuter invisible
+    messageDiv.style.transform = 'translate(-50%, -30px)'; // Débuter au dessus
+  
+    document.body.appendChild(messageDiv); // Ajouter au DOM
+  
+    // Animation d'apparition
+    setTimeout(() => {
+      messageDiv.style.opacity = '1';
+      messageDiv.style.transform = 'translateX(-50%)'; // Aller à la position finale
+    }, 10); // Un petit délai pour que la transition fonctionne
+  
+    // Disparition automatique après 3 secondes (ajustez si nécessaire)
+    setTimeout(() => {
+      messageDiv.style.opacity = '0';
+      messageDiv.style.transform = 'translate(-50%, -30px)';
       setTimeout(() => {
-        messageDiv.style.opacity = '1';
-        messageDiv.style.transform = 'translateX(-50%)'; // Aller à la position finale
-      }, 10); // Un petit délai pour que la transition fonctionne
-    
-      // Disparition automatique après 3 secondes (ajustez si nécessaire)
-      setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        messageDiv.style.transform = 'translate(-50%, -30px)';
-        setTimeout(() => {
-          document.body.removeChild(messageDiv); // Supprimer du DOM après la transition
-        }, 500); // Attendre la fin de la transition
-      }, 3000);
-    }   
-     
-      </script>
-    
+        document.body.removeChild(messageDiv); // Supprimer du DOM après la transition
+      }, 500); // Attendre la fin de la transition
+    }, 3000);
+  }   
+   
+   function openTranslationInNewTab(sourceLang, targetLang, textToTranslate) {
+      const encodedText = encodeURIComponent(textToTranslate);
+         // --- REMPLACEZ LA CONSTRUCTION DE L'URL PAR CECI ---
+     const googleTranslateUrl =
+       'https://translate.google.com/details' + // Utilisez des guillemets simples ici
+       '?sl=' + sourceLang + // Concaténation simple
+       '&tl=' + targetLang +
+       '&text=' + encodedText +
+       '&op=translate';
+     // --- FIN DE LA CONSTRUCTION DE L'URL ---
+      /*
+      const googleTranslateUrl =
+        `https://translate.google.com/details` +
+        `?sl=${sourceLang}` +
+        `&tl=${targetLang}` +
+        `&text=${encodedText}` +
+        `&op=translate`;*/
+      window.open(googleTranslateUrl, '_blank');
+    }
+    </script>
+  

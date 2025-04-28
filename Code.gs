@@ -1,8 +1,15 @@
 const FLASHCARDS_SHEET_NAME = 'Flashcards'; // Remplace par le nom de ta feuille si nécessaire
 const CATEGORIES_SHEET_NAME = 'Categories'; // Nom de ta feuille des catégories
 const CONST_BOITES_NAME = 'Boites';
+const CONFIG_SHEET_NAME = 'Config' ;
 
+// aigullage des pages
+/*
 function doGet(e) {
+  
+  // Loguer les paramètres reçus au début de la fonction
+  debug.log('doGet exécuté avec les paramètres:', e.parameter);
+    
   let page = e.parameter.mode || "index";
   let html = HtmlService.createTemplateFromFile(page).evaluate();
   let htmlOutput = HtmlService.createHtmlOutput(html);
@@ -10,6 +17,38 @@ function doGet(e) {
 
   //Replace {{NAVBAR}} with the Navbar content
   htmlOutput.setContent(htmlOutput.getContent().replace("{{NAVBAR}}",getNavbar(page)));
+  return htmlOutput;
+}*/
+// aigullage des pages
+function doGet(e) {
+
+  // Loguer les paramètres reçus au début de la fonction
+  debug.log('doGet exécuté avec les paramètres:', e.parameter);
+
+  let pageName = e.parameter.mode || "index"; // Renommé pour la clarté, mais 'page' marche aussi
+
+  // --- Modifications minimales ici ---
+  // 1. Créer l'objet template SANS l'évaluer tout de suite
+  const htmlTemplate = HtmlService.createTemplateFromFile(pageName); // Utilisez 'pageName' ici
+
+  // 2. ASSIGNER la variable au template AVANT l'évaluation
+  //    Assurez-vous que la variable globale DEBUG_MODE (celle lue depuis la feuille ou hardcodée) est définie.
+  htmlTemplate.DEBUG_MODE_CLIENT = typeof DEBUG_MODE !== 'undefined' ? DEBUG_MODE : false; // Assignation de la variable au template
+
+  // 3. ÉVALUER l'objet template MAINTENANT qu'il a la variable.
+  //    .evaluate() retourne directement l'objet HtmlOutput.
+  const htmlOutput = htmlTemplate.evaluate(); // <-- htmlOutput est MAINTENANT le résultat évalué directement
+  // Note : Vous n'avez plus besoin de 'let html = ...' ni 'let htmlOutput = HtmlService.createHtmlOutput(html);'
+
+  // --- Le reste de votre code continue d'utiliser cet objet htmlOutput ---
+  htmlOutput.addMetaTag('viewport', 'width=device-width, initial-scale=1');
+
+  //Replace {{NAVBAR}} with the Navbar content
+  // Continuez à utiliser htmlOutput.getContent() sur l'objet évalué
+  htmlOutput.setContent(htmlOutput.getContent().replace("{{NAVBAR}}",getNavbar(pageName))); // Utilisez 'pageName' ici aussi si vous voulez
+
+  debug.log('Template évalué pour la page', pageName, 'et prêt à être retourné.'); // Optionnel : loguer l'étape
+
   return htmlOutput;
 }
 
@@ -56,6 +95,84 @@ function getScriptURL(qs = null) {
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
+
+/* ---
+   Partie de gestion du debug
+   --- */
+// --- Configuration lue depuis une feuille Google Sheet ---
+let DEBUG_MODE = false; // Valeur par défaut en cas d'échec de lecture
+
+try {
+  
+  const debugFlagCell = 'A1'; // <--- Remplacez par la cellule contenant "oui" ou "non"
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+  const debugValue = sheet.getRange(debugFlagCell).getValue();
+
+  // Assigner true si la valeur est "oui" (insensible à la casse)
+  if (typeof debugValue === 'string' && debugValue.toLowerCase() === 'oui') {
+    DEBUG_MODE = true;
+  }
+
+  // Log pour vérifier si la lecture a réussi (ce log s'exécute TOUJOURS au démarrage du script)
+  Logger.log('Mode débogage lu depuis la feuille : ' + DEBUG_MODE);
+
+} catch (e) {
+  // En cas d'erreur de lecture (feuille non trouvée, cellule vide, etc.)
+  Logger.log('AVERTISSEMENT: Impossible de lire le mode débogage depuis la feuille. Utilisation du mode par défaut (' + DEBUG_MODE + '). Erreur: ' + e.message);
+  // DEBUG_MODE reste à false ou sa valeur par défaut
+}
+// Helper pour le débogage côté serveur
+const debug = {
+  /**
+   * Log un message dans Logger.log uniquement si le mode DEBUG est activé.
+   * Gère la sérialisation basique des objets pour Logger.log.
+   * @param {...*} args Les arguments à logger.
+   */
+  log: function(...args) {
+    // Assurez-vous que la variable DEBUG_MODE est définie et vraie
+    if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+      // Logger.log ne gère pas les objets JS de manière aussi jolie que console.log
+      // On essaie de convertir les objets en JSON pour un affichage plus clair.
+      const logMessage = args.map(arg => {
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            return '[Objet non sérialisable]';
+          }
+        }
+        return arg;
+      }).join(' '); // Rejoindre les arguments par un espace
+      Logger.log("DEBUG SERVER: " + logMessage);
+    }
+  },
+
+  /**
+   * Log une information de debug côté serveur.
+   * @param {...*} args Les arguments à logger.
+   */
+  info: function(...args) {
+    if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+       const logMessage = args.map(arg => { /* ... serialization logic ... */ return arg; }).join(' ');
+       Logger.log("DEBUG SERVER INFO: " + logMessage);
+    }
+  },
+
+  /**
+   * Log un avertissement de debug côté serveur.
+   * @param {...*} args Les arguments à logger.
+   */
+  warn: function(...args) {
+    if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+       const logMessage = args.map(arg => { /* ... serialization logic ... */ return arg; }).join(' ');
+       Logger.log("DEBUG SERVER WARNING: " + logMessage);
+    }
+  }
+
+  // Ajoutez d'autres méthodes si besoin
+};
 /* ---
       Retourne une ligne de la feuille sous-forme de structure
    --- */

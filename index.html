@@ -10,6 +10,13 @@
 
   <meta charset="UTF-8">
 
+  <script>
+    const G_DEBUG_MODE = <?= DEBUG_MODE_CLIENT ?>;
+
+    // Ajout du console.log pour vérifier la valeur côté client
+    console.log("DEBUG_MODE value is:", G_DEBUG_MODE);
+  </script>
+
   <!-- Styles -->
   <style>
       /* Le contenu de Stylesheet.html sera inséré ici */
@@ -44,8 +51,12 @@
         <label class="btn btn-outline-secondary btn-sm" for="sensRtoQ">
             Sens : R->Q
         </label>
+    <button id="translateButton">
+      <i class="fa-solid fa-language"></i>
+    </button>          
     </div>
     <div id="flashcard-content" class="flashcard-content">
+      
     </div>
     <div id="flashcard-controls" class="flashcard-controls">
         <button id="prev-card-btn" class="btn btn-secondary btn-lg" onclick="prevFlashcard()" disabled>
@@ -100,16 +111,42 @@ const G_elt_nextCardBtn = document.getElementById('next-card-btn');
   // Charge les données au chargement de la page
 document.addEventListener('DOMContentLoaded', onLoad);
 
+
+
 // Fonction appelée au chargement de la page
 function onLoad() {
   google.script.run.withSuccessHandler(handleCategories).getCategories();
   google.script.run.withSuccessHandler(handleBoites).getBoites();
-  // inutile const G_elt_sensControls = document.getElementById('sens-controls');
   if (G_elt_sensControls) {
     G_elt_sensControls.addEventListener('change', () => {
-      showFlashcard(G_currentCardIndex);
+      // Logique du changement de sens
+      debug.log("Changement de sens détecté.");
+      showFlashcard(G_currentCardIndex); // showFlashcard est définie dans clientSideCode.html
     });
-  }
+  } else { debug.error("Element #sens-controls not found!"); }
+
+  // Écouteur pour le bouton de traduction (si translateButton existe)
+  if (translateButton) {
+    translateButton.addEventListener('click', () => {
+      // Logique pour déterminer le texte et les langues
+      debug.log("Bouton Traduire cliqué.");
+      const afficheQuestionEnPremier = G_elt_sensControls.querySelector('input[name="sens"]:checked').value === 'QtoR';
+      const textToTranslate = afficheQuestionEnPremier
+        ? G_flashcardsData[G_currentCardIndex].Question
+        : G_flashcardsData[G_currentCardIndex].Reponse;
+      const srcLang = afficheQuestionEnPremier ? 'fr' : 'ar';
+      const destLang = afficheQuestionEnPremier ? 'ar' : 'fr';
+
+      if (textToTranslate) {
+        // Appel à la fonction utilitaire openTranslationInNewTab (définie dans clientSideCode.html)
+        openTranslationInNewTab(srcLang, destLang, textToTranslate);
+      } else {
+        console.warn("Pas de texte à traduire pour la carte actuelle.");
+      }
+    });
+  } else { debug.error("Translate button or dependencies not found on DOMContentLoaded!"); }
+
+
 }
 </script>
 
