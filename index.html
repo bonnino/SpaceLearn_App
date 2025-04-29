@@ -56,7 +56,19 @@
     </button>          
     </div>
     <div id="flashcard-content" class="flashcard-content">
-      
+      <div id="current-flashcard" class="flashcard"> 
+        <div id="flashcard-front" class="front" style="opacity: 1;">
+        {/* Le texte de la question/réponse sera inséré ici par JS */}
+        Question
+        </div>
+        <div id="flashcard-back" class="back answer" style="opacity: 0;">
+        {/* Le texte de la question/réponse sera inséré ici par JS */}
+        Réponse
+        </div>
+        <button id="show-answer-btn" class="show-answer-btn">
+          <i id="show-answer-icon" class="fa-solid fa-eye"></i> 
+        </button>
+      </div>      
     </div>
     <div id="flashcard-controls" class="flashcard-controls">
         <button id="prev-card-btn" class="btn btn-secondary btn-lg" onclick="prevFlashcard()" disabled>
@@ -100,10 +112,14 @@ let G_currentCategoryId = -1;
 const G_elt_categoryList = document.getElementById('category-list');
 const G_elt_studySection = document.getElementById('study-section'); // Assure-toi d'avoir un élément avec cet ID
 const G_elt_cardNumberDisplay = document.getElementById('study-card-number'); // Récupère l'élément pour afficher le nombre
-
 const G_elt_flashcardContainer = document.getElementById('flashcard-container');
 const G_elt_sensControls = document.getElementById('sens-controls'); // Récupère le conteneur des radios
 const G_elt_flashcardContent = document.getElementById('flashcard-content');
+const G_elt_flashcard_Front = document.getElementById('flashcard-front');
+const G_elt_flashcard_Back = document.getElementById('flashcard-back');
+const G_elt_show_answer = document.getElementById('show-answer-btn'); 
+const G_elt_iconElement = document.getElementById('show-answer-icon'); 
+
 
 const G_elt_prevCardBtn = document.getElementById('prev-card-btn');
 const G_elt_nextCardBtn = document.getElementById('next-card-btn');
@@ -115,6 +131,7 @@ document.addEventListener('DOMContentLoaded', onLoad);
 
 // Fonction appelée au chargement de la page
 function onLoad() {
+  debug.log("on load : BEGIN")
   google.script.run.withSuccessHandler(handleCategories).getCategories();
   google.script.run.withSuccessHandler(handleBoites).getBoites();
   if (G_elt_sensControls) {
@@ -146,7 +163,23 @@ function onLoad() {
     });
   } else { debug.error("Translate button or dependencies not found on DOMContentLoaded!"); }
 
-
+  if (G_elt_show_answer) {
+    G_elt_show_answer.addEventListener('click', () => {
+        if (G_elt_iconElement.classList.contains('fa-eye')) {
+          G_elt_flashcard_Front.style.opacity = '0';
+          G_elt_flashcard_Back.style.opacity = '1';
+          // Changer la classe pour afficher l'icône "eye-slash"
+          G_elt_iconElement.classList.remove('fa-eye');
+          G_elt_iconElement.classList.add('fa-eye-slash');
+        } else {
+          G_elt_flashcard_Front.style.opacity = '1';
+          G_elt_flashcard_Back.style.opacity = '0';
+          // Changer la classe pour afficher l'icône "eye"
+          G_elt_iconElement.classList.remove('fa-eye-slash');
+          G_elt_iconElement.classList.add('fa-eye');
+        }
+      });    
+  }
 }
 </script>
 

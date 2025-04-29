@@ -58,6 +58,15 @@
           //G_currentCategoryId = selectedCategoryId;
           G_currentCategoryId = parseInt(selectedCategoryId);
           G_elt_studySection.style.display = 'block'; // Affiche la section des boîtes
+
+          // Réinitialiser l'état "enfoncé" des boutons de boîte (on suppose que G_elt_studySection et les boutons existent)
+          const boxButtons = G_elt_studySection.querySelectorAll('.btn-group .btn');
+          boxButtons.forEach(btn => {
+              btn.classList.remove('active');
+              btn.setAttribute('aria-pressed', 'false');
+          });
+         G_elt_flashcardContainer.style.display = 'none'; // Cache le conteneur des flashcards          
+         G_currentBoiteId = -1; // Réinitialiser l'ID de la boîte sélectionnée
         } else {
           G_elt_studySection.style.display = 'none'; // Cache la section des boîtes si aucune catégorie n'est sélectionnée
           G_elt_flashcardContainer.style.display = 'none'; // Cache le conteneur des flashcards
@@ -167,7 +176,6 @@
     console.log(`showFlashcard : index=${index}`)
   
     console.log("Contenu de G_flashcardsData dans showFlashcard :", G_flashcardsData);
-    G_elt_flashcardContent.innerHTML = '';
   
     if (index < G_flashcardsData.length) {
       const cardData = G_flashcardsData[index];
@@ -185,52 +193,15 @@
       const questionText = afficheQuestionEnPremier ? cardData.Question : cardData.Reponse;
       const reponseText = afficheQuestionEnPremier ? cardData.Reponse : cardData.Question;
   
-      const flashcardDiv = document.createElement('div');
-      flashcardDiv.classList.add('flashcard');
-  
-      const frontDiv = document.createElement('div');
-      frontDiv.classList.add('front');
-      frontDiv.textContent = questionText;
-      frontDiv.style.opacity = '1';
-      frontDiv.style.transition = 'opacity 1s ease-in-out';
-  
-      const backDiv = document.createElement('div');
-      backDiv.classList.add('back', 'answer');
-      backDiv.textContent = reponseText;
-      backDiv.style.opacity = '0';
-      backDiv.style.transition = 'opacity 1s ease-in-out';
-  
-      flashcardDiv.appendChild(frontDiv);
-      flashcardDiv.appendChild(backDiv);
-  
-      const showAnswerBtn = document.createElement('button');
-      showAnswerBtn.classList.add('show-answer-btn');
-      // Créer l'élément i pour l'icône
-      const iconElement = document.createElement('i');
-      iconElement.classList.add('fa-solid', 'fa-eye'); // Initialiser avec l'icône "eye"
-      showAnswerBtn.appendChild(iconElement); // Ajouter l'icône au bouton
-  
-      showAnswerBtn.onclick = () => {
-        if (iconElement.classList.contains('fa-eye')) {
-          frontDiv.style.opacity = '0';
-          backDiv.style.opacity = '1';
-          // Changer la classe pour afficher l'icône "eye-slash"
-          iconElement.classList.remove('fa-eye');
-          iconElement.classList.add('fa-eye-slash');
-        } else {
-          frontDiv.style.opacity = '1';
-          backDiv.style.opacity = '0';
-          // Changer la classe pour afficher l'icône "eye"
-          iconElement.classList.remove('fa-eye-slash');
-          iconElement.classList.add('fa-eye');
-        }
-      };
-      flashcardDiv.appendChild(showAnswerBtn);
-  
-      G_elt_flashcardContent.appendChild(flashcardDiv);
-    } else {
-      G_elt_flashcardContent.textContent = 'Vous avez terminé toutes les questions !';
+
+      G_elt_flashcard_Front.textContent = questionText;
+      G_elt_flashcard_Front.style.opacity = '1';
+      
+      G_elt_flashcard_Back.textContent = reponseText;
+      G_elt_flashcard_Back.style.opacity = '0';
+      
     }
+      
   }
   
   function nextFlashcard() {
